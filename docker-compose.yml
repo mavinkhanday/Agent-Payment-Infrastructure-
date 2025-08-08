@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: ai-cost-tracker-db
+    environment:
+      POSTGRES_DB: ai_cost_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    networks:
+      - ai-cost-tracker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_cost_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: ai-cost-tracker-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - ai-cost-tracker
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Main Application
+  app:
+    build: .
+    container_name: ai-cost-tracker-app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-password123}@database:5432/ai_cost_tracker
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: ai_cost_tracker
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-password123}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - ai-cost-tracker
+    volumes:
+      - app_logs:/app/logs
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  app_logs:
+    driver: local
+
+networks:
+  ai-cost-tracker:
+    driver: bridge

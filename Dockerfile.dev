@@ -1,0 +1,37 @@
+# Development Dockerfile for Backend API
+FROM node:18-alpine
+
+# Install development tools
+RUN apk add --no-cache postgresql-client curl
+
+# Create app user for development
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies)
+RUN npm install
+
+# Copy source code
+COPY src/ ./src/
+
+# Create necessary directories
+RUN mkdir -p logs tmp && \
+    chown -R nextjs:nodejs /app
+
+# Switch to non-root user
+USER nextjs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start with nodemon for hot reload
+CMD ["npx", "nodemon", "src/server.js"]

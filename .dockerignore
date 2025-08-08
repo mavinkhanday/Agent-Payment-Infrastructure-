@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+dashboard/node_modules/
+sdk/node_modules/
+
+# Build outputs
+dashboard/dist/
+sdk/dist/
+*.log
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests
+**/*.test.js
+**/*.test.ts
+coverage/
+
+# Temporary files
+tmp/
+temp/
